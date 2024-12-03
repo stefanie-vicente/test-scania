@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { signIn, useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function HomePage() {
@@ -9,16 +9,23 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (session) {
-      router.push("/dashboard");
+    if (!session) {
+      router.push("/login");
     }
-    // if !session push to /login
   }, [session, router]);
+
+  if (!session) {
+    return null;
+  }
 
   return (
     <div>
       <h2>GitHub Insights</h2>
-      <button onClick={() => signIn("github")}>Sign in with GitHub</button>
+      <button onClick={() => router.push("/dashboard")}>Go to Dashboard</button>
+      <button onClick={() => router.push("/commit-list")}>
+        Go to Commit List
+      </button>
+      <button onClick={() => signOut()}>Sign Out</button>
     </div>
   );
 }

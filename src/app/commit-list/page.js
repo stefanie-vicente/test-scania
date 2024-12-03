@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { fetchCommitsList } from "../utils/requests";
-import { groupCommitsByDate } from "../utils/helpers";
 import CommitList from "@/components/CommitList";
 
 export default function MyCommits() {
@@ -48,6 +47,17 @@ export default function MyCommits() {
     setFilteredCommits(filtered);
   };
 
+  const groupCommitsByDate = (commits) => {
+    const grouped = {};
+    commits.forEach((commit) => {
+      const date = new Date(commit.commit.author.date).toLocaleDateString();
+      if (!grouped[date]) {
+        grouped[date] = [];
+      }
+      grouped[date].push(commit);
+    });
+    return grouped;
+  };
   const groupedCommits = groupCommitsByDate(filteredCommits);
 
   return (

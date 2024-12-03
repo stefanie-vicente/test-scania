@@ -1,23 +1,17 @@
-import axios, { all } from "axios";
-import { getTotalCommits } from "./helpers";
+import axios from "axios";
 
 const gitHubRequest = async (url, headers) => {
   try {
     const response = await axios.get(url, { headers });
     return response.data;
   } catch (error) {
-    console.error(`Error fetching data from ${url}:`, error);
+    console.error(`Error fetching data from ${url}:`, error.message);
     throw error;
   }
 };
 
-const fetchUserData = async (headers) => {
-  const userResponse = await gitHubRequest(
-    "https://api.github.com/user",
-    headers
-  );
-  return userResponse;
-};
+const fetchUserData = (headers) =>
+  gitHubRequest("https://api.github.com/user", headers);
 
 const fetchRepositories = async (headers) => {
   const reposResponse = await gitHubRequest(
@@ -26,27 +20,43 @@ const fetchRepositories = async (headers) => {
   );
   const repos = reposResponse.filter((repo) => !repo.fork);
 
-  if (repos.length === 0) {
-    console.log("No non-forked repositories found.");
-    return [];
-  }
-
+  if (repos.length === 0) console.log("No non-forked repositories found.");
   return repos;
+};
+
+const isEmptyRepo = (repo) => {
+  if (repo.size === 0) {
+    console.log(`Repository ${repo.name} is empty.`);
+    return true;
+  }
+  return false;
+};
+
+export const fetchTotalCommits = async (repos, headers) => {
+  let totalCommits = 0;
+  for (const repo of repos) {
+    if (isEmptyRepo(repo)) continue;
+    try {
+      const commitsResponse = await axios.get(`${repo.url}/commits`, {
+        headers,
+      });
+      totalCommits += commitsResponse.data.length;
+    } catch (error) {
+      console.error(`Error fetching total commits for repo ${repo.name}`);
+    }
+  }
+  return totalCommits;
 };
 
 export const fetchCommitsList = async (token) => {
   try {
     const headers = { Authorization: `Bearer ${token}` };
-
     const repos = await fetchRepositories(headers);
     if (repos.length === 0) return;
 
     const allCommits = [];
     for (const repo of repos) {
-      if (repo.size === 0) {
-        console.log(`Repository ${repo.name} is empty.`);
-        continue;
-      }
+      if (isEmptyRepo(repo)) continue;
       try {
         const commitsResponse = await axios.get(`${repo.url}/commits`, {
           headers,
@@ -63,26 +73,23 @@ export const fetchCommitsList = async (token) => {
 };
 
 export const fetchCommitsFrequency = async (repos, headers) => {
-  const lastYear = new Date();
-  lastYear.setFullYear(lastYear.getFullYear() - 1);
-
   const commitFrequencies = Array(12).fill(0);
+
   for (const repo of repos) {
-    if (repo.size === 0) {
-      console.log(`Repository ${repo.name} is empty.`);
-      continue;
-    }
+    if (isEmptyRepo(repo)) continue;
     try {
-      const commits = await gitHubRequest(
-        `${repo.url}/commits?since=${lastYear.toISOString()}`,
-        headers
-      );
-      commits.forEach((commit) => {
-        const commitDate = new Date(commit.commit.author.date);
-        commitFrequencies[commitDate.getMonth()]++;
+      const owner = repo.owner.login;
+      const repoName = repo.name;
+      const url = `https://api.github.com/repos/${owner}/${repoName}/stats/commit_activity`;
+      const weeklyCommitActivity = await gitHubRequest(url, headers);
+
+      weeklyCommitActivity.forEach((week) => {
+        const weekDate = new Date(week.week * 1000);
+        const month = weekDate.getMonth();
+        commitFrequencies[month] += week.total;
       });
     } catch (error) {
-      console.error(`Error fetching commits for repo ${repo.name}`);
+      console.error(`Error fetching commit activity for repo ${repo.name}`);
     }
   }
 
@@ -111,13 +118,11 @@ export const fetchLanguages = async (repos, headers) => {
 export const fetchDashboardData = async (token) => {
   try {
     const headers = { Authorization: `Bearer ${token}` };
-
     const repos = await fetchRepositories(headers);
     if (repos.length === 0) return;
 
     const repoCommits = await fetchCommitsFrequency(repos, headers);
     const languages = await fetchLanguages(repos, headers);
-
     const userData = await fetchUserData(headers);
 
     return {
@@ -127,7 +132,7 @@ export const fetchDashboardData = async (token) => {
         followers: userData.followers,
         following: userData.following,
         projects: repos.length,
-        totalCommits: await getTotalCommits(repos, headers),
+        totalCommits: await fetchTotalCommits(repos, headers),
       },
     };
   } catch (error) {

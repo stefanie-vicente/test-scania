@@ -19,7 +19,7 @@ const fetchRepositories = async (headers) => {
       "https://api.github.com/user/repos",
       headers
     );
-    const nonForkedRepos = repos.filter((repo) => !repo.fork);
+    const nonForkedRepos = repos?.filter((repo) => !repo.fork);
     if (nonForkedRepos.length === 0)
       console.log("No non-forked repositories found.");
     return nonForkedRepos;
@@ -33,7 +33,7 @@ const isEmptyRepo = (repo) => repo.size === 0;
 
 const fetchTotalCommits = async (repos, headers) => {
   const commitCounts = await Promise.all(
-    repos.map(async (repo) => {
+    repos?.map(async (repo) => {
       if (isEmptyRepo(repo)) {
         console.log(`Repository ${repo.name} is empty.`);
         return 0;
@@ -58,7 +58,7 @@ export const fetchCommitsList = async (token) => {
     if (repos.length === 0) return [];
 
     const allCommits = await Promise.all(
-      repos.map(async (repo) => {
+      repos?.map(async (repo) => {
         if (isEmptyRepo(repo)) return [];
         try {
           const commits = await gitHubRequest(`${repo.url}/commits`, headers);
@@ -80,7 +80,7 @@ const fetchCommitsFrequency = async (repos, headers) => {
   const commitFrequencies = Array(12).fill(0);
 
   const activityData = await Promise.all(
-    repos.map(async (repo) => {
+    repos?.map(async (repo) => {
       if (isEmptyRepo(repo)) return [];
       try {
         const owner = repo.owner.login;
@@ -97,13 +97,15 @@ const fetchCommitsFrequency = async (repos, headers) => {
     })
   );
 
-  activityData.forEach((weeklyCommitActivity) => {
-    weeklyCommitActivity.forEach((week) => {
-      const weekDate = new Date(week.week * 1000);
-      const month = weekDate.getMonth();
-      commitFrequencies[month] += week.total;
+  activityData &&
+    activityData?.forEach((weeklyCommitActivity) => {
+      weeklyCommitActivity &&
+        weeklyCommitActivity?.forEach((week) => {
+          const weekDate = new Date(week.week * 1000);
+          const month = weekDate.getMonth();
+          commitFrequencies[month] += week.total;
+        });
     });
-  });
 
   return commitFrequencies;
 };
@@ -112,7 +114,7 @@ const fetchLanguages = async (repos, headers) => {
   const languageCounts = {};
 
   const languageData = await Promise.all(
-    repos.map(async (repo) => {
+    repos?.map(async (repo) => {
       try {
         return gitHubRequest(repo.languages_url, headers);
       } catch (error) {
@@ -122,13 +124,14 @@ const fetchLanguages = async (repos, headers) => {
     })
   );
 
-  languageData.forEach((languages) => {
-    Object.entries(languages).forEach(([language, count]) => {
-      languageCounts[language] = (languageCounts[language] || 0) + count;
+  languageData &&
+    languageData?.forEach((languages) => {
+      Object.entries(languages)?.forEach(([language, count]) => {
+        languageCounts[language] = (languageCounts[language] || 0) + count;
+      });
     });
-  });
 
-  return Object.entries(languageCounts).map(([language, count]) => ({
+  return Object.entries(languageCounts)?.map(([language, count]) => ({
     language,
     count,
   }));

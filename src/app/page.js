@@ -45,14 +45,14 @@ export default function HomePage() {
       <div style={{ display: "flex", gap: "20px" }}>
         <TdsButton
           onClick={() => router.push("/dashboard")}
-          text="Go to Dashboard"
+          text="Dashboard"
           type="button"
           variant="primary"
           size="lg"
         ></TdsButton>
         <TdsButton
           onClick={() => router.push("/commit-list")}
-          text="Go to Commit List"
+          text="Commit List"
           type="button"
           variant="primary"
           size="lg"

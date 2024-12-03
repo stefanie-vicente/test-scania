@@ -1,11 +1,15 @@
-"use client";
+import "./globals.css";
+import SessionProvider from "./SessionProvider";
 
-import { SessionProvider } from "next-auth/react";
-
-export default ({ children }) => (
-  <html>
-    <body>
-      <SessionProvider>{children}</SessionProvider>
-    </body>
-  </html>
-);
+export default function RootLayout({ children }) {
+  return (
+    <SessionProvider>
+      <html>
+        <head>
+          <title>Github Insights</title>
+        </head>
+        <body>{children}</body>
+      </html>
+    </SessionProvider>
+  );
+}

@@ -1,31 +1,70 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { defineCustomElements, TdsButton } from "@scania/tegel-react";
+
+defineCustomElements();
 
 export default function HomePage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!session) {
-      router.push("/login");
+    if (status === "loading") {
+      setLoading(true);
+    } else {
+      setLoading(false);
+      if (status === "unauthenticated") {
+        router.push("/login");
+      }
     }
-  }, [session, router]);
+  }, [status, router]);
 
-  if (!session) {
-    return null;
+  if (loading) {
+    return (
+      <div>
+        <p>Loading...</p>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <h2>GitHub Insights</h2>
-      <button onClick={() => router.push("/dashboard")}>Go to Dashboard</button>
-      <button onClick={() => router.push("/commit-list")}>
-        Go to Commit List
-      </button>
-      <button onClick={() => signOut()}>Sign Out</button>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+      }}
+    >
+      <h1 className="tds-expressive-headline-01">GitHub Insights</h1>
+      <div style={{ display: "flex", gap: "20px" }}>
+        <TdsButton
+          onClick={() => router.push("/dashboard")}
+          text="Go to Dashboard"
+          type="button"
+          variant="primary"
+          size="lg"
+        ></TdsButton>
+        <TdsButton
+          onClick={() => router.push("/commit-list")}
+          text="Go to Commit List"
+          type="button"
+          variant="primary"
+          size="lg"
+        ></TdsButton>
+        <TdsButton
+          text="Sign Out"
+          type="button"
+          variant="primary"
+          size="lg"
+          onClick={() => signOut()}
+        ></TdsButton>
+      </div>
     </div>
   );
 }

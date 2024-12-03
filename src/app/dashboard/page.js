@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import DashboardSummary from "@/components/DashboardSummary";
 import CommitCount from "@/components/charts/CommitCount";
 import ProgrammingLanguages from "@/components/charts/ProgrammingLanguages";
-import { fetchGitHubData } from "./requests";
+import { fetchDashboardData } from "../utils/requests";
 
-// add logout button
+// add logout button or redirect to / and put the button there
 export default function Dashboard() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -23,17 +23,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!session) {
-      // push to login
-      router.push("/");
+      router.push("/login");
       return;
     }
 
     const fetchData = async () => {
       if (session?.accessToken) {
         try {
-          const { commitData, languageData, summary } = await fetchGitHubData(
-            session.accessToken
-          );
+          const { commitData, languageData, summary } =
+            await fetchDashboardData(session.accessToken);
           setCommitData(commitData);
           setLanguageData(languageData);
           setSummary(summary);

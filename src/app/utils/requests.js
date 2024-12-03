@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { all } from "axios";
 import { getTotalCommits } from "./helpers";
 
 const gitHubRequest = async (url, headers) => {
@@ -34,7 +34,35 @@ const fetchRepositories = async (headers) => {
   return repos;
 };
 
-export const fetchCommits = async (repos, headers) => {
+export const fetchCommitsList = async (token) => {
+  try {
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const repos = await fetchRepositories(headers);
+    if (repos.length === 0) return;
+
+    const allCommits = [];
+    for (const repo of repos) {
+      if (repo.size === 0) {
+        console.log(`Repository ${repo.name} is empty.`);
+        continue;
+      }
+      try {
+        const commitsResponse = await axios.get(`${repo.url}/commits`, {
+          headers,
+        });
+        allCommits.push(...commitsResponse.data);
+      } catch (error) {
+        console.error(`Error fetching commits for repo ${repo.name}`);
+      }
+    }
+    return allCommits;
+  } catch (error) {
+    console.error("Error fetching GitHub data:", error);
+  }
+};
+
+export const fetchCommitsFrequency = async (repos, headers) => {
   const lastYear = new Date();
   lastYear.setFullYear(lastYear.getFullYear() - 1);
 
@@ -80,14 +108,14 @@ export const fetchLanguages = async (repos, headers) => {
   }));
 };
 
-export const fetchGitHubData = async (token) => {
+export const fetchDashboardData = async (token) => {
   try {
     const headers = { Authorization: `Bearer ${token}` };
 
     const repos = await fetchRepositories(headers);
     if (repos.length === 0) return;
 
-    const repoCommits = await fetchCommits(repos, headers);
+    const repoCommits = await fetchCommitsFrequency(repos, headers);
     const languages = await fetchLanguages(repos, headers);
 
     const userData = await fetchUserData(headers);

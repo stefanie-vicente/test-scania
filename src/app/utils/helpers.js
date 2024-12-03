@@ -16,3 +16,15 @@ export const getTotalCommits = async (repos, headers) => {
   }
   return totalCommits;
 };
+
+export const groupCommitsByDate = (commits) => {
+  const grouped = {};
+  commits.forEach((commit) => {
+    const date = new Date(commit.commit.author.date).toLocaleDateString();
+    if (!grouped[date]) {
+      grouped[date] = [];
+    }
+    grouped[date].push(commit);
+  });
+  return grouped;
+};

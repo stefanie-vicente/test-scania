@@ -14,100 +14,119 @@ const fetchUserData = (headers) =>
   gitHubRequest("https://api.github.com/user", headers);
 
 const fetchRepositories = async (headers) => {
-  const reposResponse = await gitHubRequest(
-    "https://api.github.com/user/repos",
-    headers
+  try {
+    const repos = await gitHubRequest(
+      "https://api.github.com/user/repos",
+      headers
+    );
+    const nonForkedRepos = repos.filter((repo) => !repo.fork);
+    if (nonForkedRepos.length === 0)
+      console.log("No non-forked repositories found.");
+    return nonForkedRepos;
+  } catch (error) {
+    console.error("Error fetching repositories:", error);
+    throw error;
+  }
+};
+
+const isEmptyRepo = (repo) => repo.size === 0;
+
+const fetchTotalCommits = async (repos, headers) => {
+  const commitCounts = await Promise.all(
+    repos.map(async (repo) => {
+      if (isEmptyRepo(repo)) {
+        console.log(`Repository ${repo.name} is empty.`);
+        return 0;
+      }
+      try {
+        const commits = await gitHubRequest(`${repo.url}/commits`, headers);
+        return commits.length;
+      } catch (error) {
+        console.error(`Error fetching commits for repo ${repo.name}:`, error);
+        return 0;
+      }
+    })
   );
-  const repos = reposResponse.filter((repo) => !repo.fork);
-
-  if (repos.length === 0) console.log("No non-forked repositories found.");
-  return repos;
-};
-
-const isEmptyRepo = (repo) => {
-  if (repo.size === 0) {
-    console.log(`Repository ${repo.name} is empty.`);
-    return true;
-  }
-  return false;
-};
-
-export const fetchTotalCommits = async (repos, headers) => {
-  let totalCommits = 0;
-  for (const repo of repos) {
-    if (isEmptyRepo(repo)) continue;
-    try {
-      const commitsResponse = await axios.get(`${repo.url}/commits`, {
-        headers,
-      });
-      totalCommits += commitsResponse.data.length;
-    } catch (error) {
-      console.error(`Error fetching total commits for repo ${repo.name}`);
-    }
-  }
-  return totalCommits;
+  return commitCounts.reduce((total, count) => total + count, 0);
 };
 
 export const fetchCommitsList = async (token) => {
   try {
     const headers = { Authorization: `Bearer ${token}` };
     const repos = await fetchRepositories(headers);
-    if (repos.length === 0) return;
 
-    const allCommits = [];
-    for (const repo of repos) {
-      if (isEmptyRepo(repo)) continue;
-      try {
-        const commitsResponse = await axios.get(`${repo.url}/commits`, {
-          headers,
-        });
-        allCommits.push(...commitsResponse.data);
-      } catch (error) {
-        console.error(`Error fetching commits for repo ${repo.name}`);
-      }
-    }
-    return allCommits;
+    if (repos.length === 0) return [];
+
+    const allCommits = await Promise.all(
+      repos.map(async (repo) => {
+        if (isEmptyRepo(repo)) return [];
+        try {
+          const commits = await gitHubRequest(`${repo.url}/commits`, headers);
+          return commits;
+        } catch (error) {
+          console.error(`Error fetching commits for repo ${repo.name}:`, error);
+          return [];
+        }
+      })
+    );
+
+    return allCommits.flat();
   } catch (error) {
-    console.error("Error fetching GitHub data:", error);
+    console.error("Error fetching commits list:", error);
   }
 };
 
-export const fetchCommitsFrequency = async (repos, headers) => {
+const fetchCommitsFrequency = async (repos, headers) => {
   const commitFrequencies = Array(12).fill(0);
 
-  for (const repo of repos) {
-    if (isEmptyRepo(repo)) continue;
-    try {
-      const owner = repo.owner.login;
-      const repoName = repo.name;
-      const url = `https://api.github.com/repos/${owner}/${repoName}/stats/commit_activity`;
-      const weeklyCommitActivity = await gitHubRequest(url, headers);
+  const activityData = await Promise.all(
+    repos.map(async (repo) => {
+      if (isEmptyRepo(repo)) return [];
+      try {
+        const owner = repo.owner.login;
+        const repoName = repo.name;
+        const url = `https://api.github.com/repos/${owner}/${repoName}/stats/commit_activity`;
+        return gitHubRequest(url, headers);
+      } catch (error) {
+        console.error(
+          `Error fetching commit activity for repo ${repo.name}:`,
+          error
+        );
+        return [];
+      }
+    })
+  );
 
-      weeklyCommitActivity.forEach((week) => {
-        const weekDate = new Date(week.week * 1000);
-        const month = weekDate.getMonth();
-        commitFrequencies[month] += week.total;
-      });
-    } catch (error) {
-      console.error(`Error fetching commit activity for repo ${repo.name}`);
-    }
-  }
+  activityData.forEach((weeklyCommitActivity) => {
+    weeklyCommitActivity.forEach((week) => {
+      const weekDate = new Date(week.week * 1000);
+      const month = weekDate.getMonth();
+      commitFrequencies[month] += week.total;
+    });
+  });
 
   return commitFrequencies;
 };
 
-export const fetchLanguages = async (repos, headers) => {
+const fetchLanguages = async (repos, headers) => {
   const languageCounts = {};
-  for (const repo of repos) {
-    try {
-      const languages = await gitHubRequest(repo.languages_url, headers);
-      Object.entries(languages).forEach(([language, count]) => {
-        languageCounts[language] = (languageCounts[language] || 0) + count;
-      });
-    } catch (error) {
-      console.error(`Error fetching languages for repo ${repo.name}`);
-    }
-  }
+
+  const languageData = await Promise.all(
+    repos.map(async (repo) => {
+      try {
+        return gitHubRequest(repo.languages_url, headers);
+      } catch (error) {
+        console.error(`Error fetching languages for repo ${repo.name}:`, error);
+        return {};
+      }
+    })
+  );
+
+  languageData.forEach((languages) => {
+    Object.entries(languages).forEach(([language, count]) => {
+      languageCounts[language] = (languageCounts[language] || 0) + count;
+    });
+  });
 
   return Object.entries(languageCounts).map(([language, count]) => ({
     language,
@@ -121,9 +140,12 @@ export const fetchDashboardData = async (token) => {
     const repos = await fetchRepositories(headers);
     if (repos.length === 0) return;
 
-    const repoCommits = await fetchCommitsFrequency(repos, headers);
-    const languages = await fetchLanguages(repos, headers);
-    const userData = await fetchUserData(headers);
+    const [repoCommits, languages, userData, totalCommits] = await Promise.all([
+      fetchCommitsFrequency(repos, headers),
+      fetchLanguages(repos, headers),
+      fetchUserData(headers),
+      fetchTotalCommits(repos, headers),
+    ]);
 
     return {
       commitData: repoCommits,
@@ -132,10 +154,10 @@ export const fetchDashboardData = async (token) => {
         followers: userData.followers,
         following: userData.following,
         projects: repos.length,
-        totalCommits: await fetchTotalCommits(repos, headers),
+        totalCommits,
       },
     };
   } catch (error) {
-    console.error("Error fetching GitHub data:", error);
+    console.error("Error fetching dashboard data:", error);
   }
 };

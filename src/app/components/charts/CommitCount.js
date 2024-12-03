@@ -36,16 +36,11 @@ const CommitCount = ({ data }) => {
     "Dec",
   ];
 
-  const filteredData = data.reduce(
-    (acc, value, index) => {
-      if (value !== 0) {
-        acc.labels.push(allLabels[index]);
-        acc.data.push(value);
-      }
-      return acc;
-    },
-    { labels: [], data: [] }
-  );
+  const filteredData = data
+    .map((value, index) =>
+      value !== 0 ? { label: allLabels[index], data: value } : null
+    )
+    .filter((item) => item !== null);
 
   const options = {
     responsive: true,
@@ -54,12 +49,8 @@ const CommitCount = ({ data }) => {
       tooltip: {
         displayColors: false,
         callbacks: {
-          label: function (context) {
-            return context.raw.toString();
-          },
-          title: function () {
-            return [];
-          },
+          label: (context) => context.raw.toString(),
+          title: () => "",
         },
       },
       legend: {
@@ -83,23 +74,24 @@ const CommitCount = ({ data }) => {
     },
   };
 
+  const chartData = {
+    labels: filteredData.map((item) => item.label),
+    datasets: [
+      {
+        label: "Commits",
+        data: filteredData.map((item) => item.data),
+        backgroundColor: "#B5CCEF",
+        hoverBackgroundColor: "#225DB1",
+      },
+    ],
+  };
+
   return (
-    <div style={{ width: "40%" }}>
-      <h2>Commit count</h2>
-      <Bar
-        data={{
-          labels: filteredData.labels,
-          datasets: [
-            {
-              label: "Commits",
-              data: filteredData.data,
-              backgroundColor: "#B5CCEF",
-              hoverBackgroundColor: "#225DB1",
-            },
-          ],
-        }}
-        options={options}
-      />
+    <div style={{ width: "60%" }}>
+      <h4>Commit Count</h4>
+      <div style={{ backgroundColor: "#F9FAFB", padding: "20px" }}>
+        <Bar data={chartData} options={options} />
+      </div>
     </div>
   );
 };

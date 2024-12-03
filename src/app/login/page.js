@@ -1,8 +1,10 @@
 "use client";
-
 import { useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { defineCustomElements, TdsButton } from "@scania/tegel-react";
+
+defineCustomElements();
 
 export default function HomePage() {
   const { data: session } = useSession();
@@ -14,10 +16,26 @@ export default function HomePage() {
     }
   }, [session, router]);
 
+  if (session) return null;
+
   return (
-    <div>
-      <h2>GitHub Insights</h2>
-      <button onClick={() => signIn("github")}>Sign in with GitHub</button>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+      }}
+    >
+      <h1 className="tds-expressive-headline-01">Github Insights</h1>
+      <TdsButton
+        type="button"
+        variant="primary"
+        size="lg"
+        onClick={() => signIn("github", { callback: "/" })}
+        text="Sign in with Github"
+      ></TdsButton>
     </div>
   );
 }

@@ -7,8 +7,14 @@ import DashboardSummary from "@/components/DashboardSummary";
 import CommitCount from "@/components/charts/CommitCount";
 import ProgrammingLanguages from "@/components/charts/ProgrammingLanguages";
 import { fetchDashboardData } from "../utils/requests";
+import {
+  defineCustomElements,
+  TdsHeader,
+  TdsHeaderTitle,
+} from "@scania/tegel-react";
 
-// add logout button or redirect to / and put the button there
+defineCustomElements();
+
 export default function Dashboard() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -20,6 +26,7 @@ export default function Dashboard() {
     projects: 0,
     totalCommits: 0,
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!session) {
@@ -30,6 +37,7 @@ export default function Dashboard() {
     const fetchData = async () => {
       if (session?.accessToken) {
         try {
+          setLoading(true);
           const { commitData, languageData, summary } =
             await fetchDashboardData(session.accessToken);
           setCommitData(commitData);
@@ -37,6 +45,8 @@ export default function Dashboard() {
           setSummary(summary);
         } catch (error) {
           console.error("Failed to fetch GitHub data:", error);
+        } finally {
+          setLoading(false);
         }
       }
     };
@@ -47,12 +57,25 @@ export default function Dashboard() {
     return () => clearInterval(intervalId);
   }, [session, router]);
 
+  if (loading) {
+    return (
+      <div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <h2>MY GITHUB SUMMARY</h2>
+      <TdsHeader>
+        <TdsHeaderTitle>Dashboard</TdsHeaderTitle>
+      </TdsHeader>
+      <h1 className="tds-expressive-headline-01">MY GITHUB SUMMARY</h1>
       <DashboardSummary data={summary} />
-      <CommitCount data={commitData} />
-      <ProgrammingLanguages data={languageData} />
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <CommitCount data={commitData} />
+        <ProgrammingLanguages data={languageData} />
+      </div>
     </div>
   );
 }

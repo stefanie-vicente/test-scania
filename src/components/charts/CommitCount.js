@@ -21,36 +21,84 @@ ChartJS.register(
 );
 
 const CommitCount = ({ data }) => {
+  const allLabels = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  const filteredData = data.reduce(
+    (acc, value, index) => {
+      if (value !== 0) {
+        acc.labels.push(allLabels[index]);
+        acc.data.push(value);
+      }
+      return acc;
+    },
+    { labels: [], data: [] }
+  );
+
+  const options = {
+    responsive: true,
+    indexAxis: "y",
+    plugins: {
+      tooltip: {
+        displayColors: false,
+        callbacks: {
+          label: function (context) {
+            return context.raw.toString();
+          },
+          title: function () {
+            return [];
+          },
+        },
+      },
+      legend: {
+        display: false,
+      },
+    },
+    scales: {
+      x: {
+        display: false,
+      },
+      y: {
+        grid: {
+          display: false,
+        },
+      },
+    },
+    layout: {
+      padding: {
+        top: 30,
+      },
+    },
+  };
+
   return (
-    <div>
+    <div style={{ width: "40%" }}>
       <h2>Commit count</h2>
       <Bar
         data={{
-          labels: [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-          ],
+          labels: filteredData.labels,
           datasets: [
             {
               label: "Commits",
-              data: data,
-              backgroundColor: "rgba(75, 192, 192, 0.5)",
-              borderColor: "rgba(75, 192, 192, 1)",
-              borderWidth: 1,
+              data: filteredData.data,
+              backgroundColor: "#B5CCEF",
+              hoverBackgroundColor: "#225DB1",
             },
           ],
         }}
-        options={{ responsive: true }}
+        options={options}
       />
     </div>
   );

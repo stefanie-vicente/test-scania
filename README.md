@@ -41,9 +41,30 @@ Once you have your credentials, add the following to your `.env.local` file:
 GITHUB_CLIENT_ID=your-github-client-id
 GITHUB_CLIENT_SECRET=your-github-client-secret
 NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-random-secret
 ```
 
-Replace `your-github-client-id` and `your-github-client-secret` with your actual GitHub OAuth credentials.
+Replace your-github-client-id, your-github-client-secret, and your-random-secret with your actual GitHub OAuth credentials and a random secret.
+
+#### How to Generate `NEXTAUTH_SECRET`
+
+You can generate the `NEXTAUTH_SECRET` by creating a secure, random string. This string is used to sign and encrypt session data. Here are a few methods to generate it:
+
+##### Method 1: Using Node.js `crypto` Module
+
+Run the following command in your terminal to generate a secure random string:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+This will output a 64-character hexadecimal string (e.g., `d9b8ff6f2f9037580d1d8fdcd7aee2b7a5fa57d8774f92cc9e5a5d387faef29b`), which you can use as the value for `NEXTAUTH_SECRET`.
+
+##### Method 2: Using an Online Random String Generator
+
+Alternatively, you can use an online random string generator. Some options include [Random.org](https://www.random.org/strings/) or [passwordgenerator.net](https://passwordgenerator.net/). Ensure the string is at least 32 characters long and contains a mix of letters, numbers, and special characters.
+
+Once you generate a random string, copy and paste it into your `.env.local` file.
 
 ### 4. Running the Development Server
 

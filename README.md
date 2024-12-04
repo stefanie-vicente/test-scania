@@ -2,6 +2,8 @@
 
 This project is a Next.js application that includes integrations with **GitHub authentication** via **NextAuth.js**. The app also uses **Chart.js** for data visualization and **Axios** for making HTTP requests.
 
+The application is available at https://test-scania.vercel.app
+
 ## Requirements
 
 - Node.js (version 18 or higher is recommended)

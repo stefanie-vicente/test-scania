@@ -99,7 +99,7 @@ const fetchCommitsFrequency = async (repos, headers) => {
 
   activityData &&
     activityData?.forEach((weeklyCommitActivity) => {
-      weeklyCommitActivity &&
+      weeklyCommitActivity.length > 0 &&
         weeklyCommitActivity?.forEach((week) => {
           const weekDate = new Date(week.week * 1000);
           const month = weekDate.getMonth();

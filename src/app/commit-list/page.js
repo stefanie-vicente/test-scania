@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import { fetchCommitsList } from "../utils/requests";
@@ -11,6 +11,8 @@ import {
   TdsTextField,
   TdsHeader,
   TdsHeaderTitle,
+  TdsHeaderItem,
+  TdsSpinner,
 } from "@scania/tegel-react";
 
 defineCustomElements();
@@ -21,6 +23,7 @@ export default function MyCommits() {
   const [commits, setCommits] = useState([]);
   const [filteredCommits, setFilteredCommits] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!session) {
@@ -30,11 +33,14 @@ export default function MyCommits() {
     const fetchCommits = async () => {
       if (session?.accessToken) {
         try {
+          setLoading(true);
           const commitsData = await fetchCommitsList(session.accessToken);
           setCommits(commitsData);
           setFilteredCommits(commitsData);
         } catch (error) {
           console.error("Error fetching commits data", error);
+        } finally {
+          setLoading(false);
         }
       }
     };
@@ -78,19 +84,32 @@ export default function MyCommits() {
     <div>
       <TdsHeader>
         <TdsHeaderTitle>Commit List</TdsHeaderTitle>
+        <TdsHeaderItem>
+          <button onClick={() => router.push("/")}>Home</button>
+        </TdsHeaderItem>
+        <TdsHeaderItem>
+          <button onClick={() => router.push("/dashboard")}>Dashboard</button>
+        </TdsHeaderItem>
+        <TdsHeaderItem slot="end">
+          <button onClick={() => signOut()}>Sign out</button>
+        </TdsHeaderItem>
       </TdsHeader>
-      <div style={{ padding: "20px" }}>
-        <h1 className="tds-expressive-headline-01">My Commits</h1>
-        <div style={{ maxWidth: "300px" }}>
-          <TdsTextField
-            type="text"
-            placeholder="Search by message or date"
-            value={searchTerm}
-            onChange={handleSearch}
-          />
+      {loading ? (
+        <TdsSpinner variant="standard" />
+      ) : (
+        <div style={{ padding: "20px" }}>
+          <h1 className="tds-expressive-headline-01">My Commits</h1>
+          <div style={{ maxWidth: "300px" }}>
+            <TdsTextField
+              type="text"
+              placeholder="Search by message or date"
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+          </div>
+          <CommitList data={groupedCommits} userImg={session?.user?.image} />
         </div>
-        <CommitList data={groupedCommits} userImg={session?.user?.image} />
-      </div>
+      )}
     </div>
   );
 }

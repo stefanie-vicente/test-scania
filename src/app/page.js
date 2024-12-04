@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { defineCustomElements, TdsButton } from "@scania/tegel-react";
+import {
+  defineCustomElements,
+  TdsButton,
+  TdsSpinner,
+} from "@scania/tegel-react";
 
 defineCustomElements();
 
@@ -23,14 +27,6 @@ export default function HomePage() {
     }
   }, [status, router]);
 
-  if (loading) {
-    return (
-      <div>
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
   return (
     <div
       style={{
@@ -41,30 +37,37 @@ export default function HomePage() {
         height: "100%",
       }}
     >
-      <h1 className="tds-expressive-headline-01">GitHub Insights</h1>
-      <div style={{ display: "flex", gap: "20px" }}>
-        <TdsButton
-          onClick={() => router.push("/dashboard")}
-          text="Dashboard"
-          type="button"
-          variant="primary"
-          size="lg"
-        ></TdsButton>
-        <TdsButton
-          onClick={() => router.push("/commit-list")}
-          text="Commit List"
-          type="button"
-          variant="primary"
-          size="lg"
-        ></TdsButton>
-        <TdsButton
-          text="Sign Out"
-          type="button"
-          variant="primary"
-          size="lg"
-          onClick={() => signOut()}
-        ></TdsButton>
-      </div>
+      {loading ? (
+        <TdsSpinner variant="standard" />
+      ) : (
+        <>
+          {" "}
+          <h1 className="tds-expressive-headline-01">GitHub Insights</h1>
+          <div style={{ display: "flex", gap: "20px" }}>
+            <TdsButton
+              onClick={() => router.push("/dashboard")}
+              text="Dashboard"
+              type="button"
+              variant="primary"
+              size="lg"
+            ></TdsButton>
+            <TdsButton
+              onClick={() => router.push("/commit-list")}
+              text="Commit List"
+              type="button"
+              variant="primary"
+              size="lg"
+            ></TdsButton>
+            <TdsButton
+              text="Sign Out"
+              type="button"
+              variant="primary"
+              size="lg"
+              onClick={() => signOut()}
+            ></TdsButton>
+          </div>
+        </>
+      )}
     </div>
   );
 }

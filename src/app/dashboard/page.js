@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import DashboardSummary from "@/app/components/DashboardSummary";
 import CommitCount from "@/app/components/charts/CommitCount";
@@ -12,6 +12,7 @@ import {
   TdsHeader,
   TdsHeaderTitle,
   TdsSpinner,
+  TdsHeaderItem,
 } from "@scania/tegel-react";
 
 defineCustomElements();
@@ -68,6 +69,15 @@ export default function Dashboard() {
     <div>
       <TdsHeader>
         <TdsHeaderTitle>Dashboard</TdsHeaderTitle>
+        <TdsHeaderItem>
+          <button onClick={() => router.push("/")}>Home</button>
+        </TdsHeaderItem>
+        <TdsHeaderItem>
+          <button onClick={() => router.push("/commit-list")}>Commits</button>
+        </TdsHeaderItem>
+        <TdsHeaderItem slot="end">
+          <button onClick={() => signOut()}>Sign out</button>
+        </TdsHeaderItem>
       </TdsHeader>
       <div style={{ padding: "20px" }}>
         <h1 className="tds-expressive-headline-01">MY GITHUB SUMMARY</h1>
